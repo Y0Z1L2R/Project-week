@@ -1,0 +1,103 @@
+#include <Adafruit_LiquidCrystal.h>
+
+int IN1 = 11;
+int IN2 = A2;
+int IN3 = A1;
+int IN4 = 3;
+int IR1 = 13;
+int IR2 = 12;
+int val,val2, value=0, value2=0;
+int encoderPin1=2;
+int encoderPin2=A0;
+float RoE1,RoE2,RE1,RE2,distance;
+
+//int seconds = 0;
+const int rs = 8, en = 9, d7 = 7, d6 = 6, d5 = 5, d4 = 4;
+Adafruit_LiquidCrystal lcd_1(rs,en,d4,d5,d6,d7);
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(encoderPin1, INPUT);
+  pinMode(encoderPin2, INPUT);
+  attachInterrupt(digitalPinToInterrupt(encoderPin1),calculate1,FALLING);
+  attachInterrupt(digitalPinToInterrupt(encoderPin2),calculate2,FALLING);
+  // Set the output pins
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+ //Set the input Pins 
+  pinMode(IR1, INPUT);
+  pinMode(IR2, INPUT);
+
+  lcd_1.begin(16, 2);
+  lcd_1.print("Distance:");
+}
+ 
+void m(){  //Move straight
+  digitalWrite(IN1, 75);  //
+  digitalWrite(IN2, LOW);  //This two is the side with ir Sensor clockwise
+  digitalWrite(IN3, LOW);  //
+  digitalWrite(IN4, 75);//This two is the side with vera baord clockwise
+}
+
+void s(){  //Stop
+  digitalWrite(IN1, 0);
+  digitalWrite(IN2, LOW);
+  digitalWrite(IN3, LOW);
+  digitalWrite(IN4, 0);
+}
+
+void l(){
+  digitalWrite(IN1, 255);  //
+  digitalWrite(IN2, LOW);  //This two is the vera board clockwise
+  digitalWrite(IN3, 150);  //
+  digitalWrite(IN4, LOW);//This two is the side with ir sensor anitclockwise
+}
+
+void r(){
+  digitalWrite(IN1, LOW);  //
+  digitalWrite(IN2, 150);  //This two is the vera board anticlockwise
+  digitalWrite(IN3, LOW);  //
+  digitalWrite(IN4, 255);//This two is the side with ir sensor clockwise
+}
+
+void loop(){
+  val=digitalRead(IR1);
+  val2=digitalRead(IR2);
+  if ( val==1 && val2==0)
+  {
+   m();
+  }
+  if (val==0 && val2==1){
+   s();
+  }
+  if ( val==1 && val2==1)
+  {
+   r();
+  }
+  if ( val==0 && val2==0)
+  {
+   l();
+  }
+  if (value==1) {
+   RoE1++;
+   RE1=(RoE1/20)*20.37;
+   value=0;}
+  if (value2==1) {
+   RoE2++;
+   RE1=(RoE2/20)*20.37;
+   value2=0;}
+  distance=(RE1+RE2)/2;
+  lcd.setCursor(10, 0);
+  lcd.print(distance); 
+}
+
+void calculate1(){
+  value=1;
+}
+
+void calculate2(){
+ value2=1;
+}
