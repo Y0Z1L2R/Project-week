@@ -1,0 +1,192 @@
+#include <Adafruit_LiquidCrystal.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
+#include <math.h>
+
+int IN1 = 11;
+int IN2 = A2;
+int IN3 = A1;
+int IN4 = 3;
+int IR1 = 13;
+int IR2 = 12;
+int val,val2;
+int encoderPin1=2;
+int encoderPin2=A3;
+float RoE1,RoE2,RE1,RE2,distance=0;
+int value=0, value2=0;
+int Check=0, f=0,f2=0, lcdOff=0;
+float angle, angle2;
+int max=60;
+
+//int seconds = 0;
+Adafruit_MPU6050 mpu;
+const int rs = 8, en = 9, d7 = 7, d6 = 6, d5 = 5, d4 = 4;
+Adafruit_LiquidCrystal lcd(rs,en,d4,d5,d6,d7);
+
+void setup()
+{
+  Serial.begin(9600);
+  pinMode(encoderPin1, INPUT);
+  pinMode(encoderPin2, INPUT);
+  attachInterrupt(digitalPinToInterrupt(encoderPin1),calculate1,FALLING);
+  attachInterrupt(digitalPinToInterrupt(encoderPin2),calculate2,FALLING); 
+  // Set the output pins
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+ //Set the input Pins 
+  pinMode(IR1, INPUT);
+  pinMode(IR2, INPUT);
+  //MPU_6050
+  mpu.begin();
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+	delay(100);
+  //LCD
+  lcd.begin(16,2);
+  lcd.setCursor(0,0); //10
+  lcd.print("Distance:");
+  lcd.setCursor(0,1);
+  lcd.print("Angle:"); //6
+}
+
+void loop(){
+  sensors_event_t a, g, temp;
+	mpu.getEvent(&a, &g, &temp);
+  float treshold = 3;
+  int t;
+  if (Check==0) {
+   analogWrite(IN1, 80);  //
+   digitalWrite(IN2, LOW);  //This two is the side with ir Sensor clockwise
+   digitalWrite(IN3, LOW);  //
+   analogWrite(IN4, 80);//This two is the side with vera baord clockwise
+   if (a.acceleration.y>treshold){ //compares threshold
+   //push up the ramp
+    analogWrite(IN1, 170);  //
+    digitalWrite(IN2, LOW);  //This two is the side with ir Sensor clockwise
+    digitalWrite(IN3, LOW);  //
+    analogWrite(IN4, 170);//This two is the side with vera baord clockwise
+    f=1;
+    delay(45);
+    angle2=angle;
+    lcdOff=1;
+   }
+   else if (a.acceleration.y<0.5 && f==1) 
+   {
+    analogWrite(IN1, 0);
+    digitalWrite(IN2, LOW);
+    digitalWrite(IN3, LOW);
+    analogWrite(IN4, 0);
+    delay(4000);
+    for (t=0; t<2; t++)
+    {
+      analogWrite(IN1, 200);  //
+      digitalWrite(IN2, LOW);  //This two is the vera board clockwise
+      analogWrite(IN3, 150);  //
+      digitalWrite(IN4, LOW);//This two is the side with ir sensor anitclockwise
+      delay(2000);
+    }
+    //going down the ramp
+    delay(1000);
+    analogWrite(IN1, 90);
+    digitalWrite(IN2, LOW);
+    digitalWrite(IN3, LOW);
+    analogWrite(IN4, 90);
+    delay(1050);
+    //Pause for a while
+    analogWrite(IN1, 0);
+    digitalWrite(IN2, LOW);
+    digitalWrite(IN3, LOW);
+    analogWrite(IN4, 0);
+    Check=1;
+   }
+  }
+  
+  else if (Check==1)
+  {
+    while ((distance)<max && f2==0)
+    {
+      val=digitalRead(IR1);
+      val2=digitalRead(IR2);
+      distanceCal();
+      if (val==0 && val2==0)
+      {
+        analogWrite(IN1, 100);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, LOW);
+        analogWrite(IN4, 100);
+      }
+      else if (val==1 && val2==1) //Stop
+      { 
+        analogWrite(IN1, 0);
+        digitalWrite(IN2, LOW);
+        digitalWrite(IN3, LOW);
+        analogWrite(IN4, 0);
+      }
+      else if ( val==0 && val2==1) //Right
+      {
+        digitalWrite(IN1, LOW);  //
+        analogWrite(IN2, 230);  //This two is the vera board anticlockwise
+        digitalWrite(IN3, LOW);  //
+        analogWrite(IN4, 230);//This two is the side with ir sensor clockwise
+      }
+      else if ( val==1 && val2==0) //Left
+      {
+        analogWrite(IN1, 230);  //
+        digitalWrite(IN2, LOW);  //This two is the vera board clockwise
+        analogWrite(IN3, 230);  //
+        digitalWrite(IN4, LOW);//This two is the side with ir sensor anitclockwise
+      }  
+    }
+     analogWrite(IN1, 0);
+     digitalWrite(IN2, LOW);
+     digitalWrite(IN3, LOW);
+     analogWrite(IN4, 0);
+     delay(2000);
+     max=1000;
+  }
+
+  //Rotary_Encoder
+  
+  //MPU_6050
+  Serial.print(a.acceleration.y);
+  Serial.println(f);
+  Serial.print("\n");
+
+  //Angle
+  //angle = atan2(a.acceleration.y, sqrt(pow(a.acceleration.x, 2) + pow(a.acceleration.z, 2))) * 180 / PI ;
+  if (lcdOff==0){
+  angle = a.acceleration.y*9;
+  lcd.setCursor(6, 1);
+  lcd.print(angle);
+  }
+  if (lcdOff==1){
+  lcd.setCursor(6, 1);
+  lcd.print(angle2);
+  } 
+  delay(250);
+}
+
+void distanceCal(){
+  if (value==1) {
+   RoE1++;
+   RE1=(RoE1/20)*20.37;
+   value=0;}
+  if (value2==1) {
+   RoE2++;
+   RE1=(RoE2/20)*20.37;
+   value2=0;}
+  distance=(RE1+RE2)/2;
+  lcd.setCursor(10, 0);
+  lcd.print(distance); 
+}
+
+void calculate1(){
+  value=1;
+}
+
+void calculate2(){
+  value2=1;
+}
