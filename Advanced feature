@@ -1,0 +1,101 @@
+#include <Adafruit_LiquidCrystal.h>
+#include <Adafruit_Sensor.h>
+#include <SoftwareSerial.h>
+
+int IN1 = 11;
+int IN2 = 6;
+int IN3 = 8;
+int IN4 = 2;
+int s= 13 , value, t;
+char BT;
+SoftwareSerial mySerial(0, 1); 
+
+void setup()
+{
+  Serial.begin(9600);
+  mySerial.begin(9600);
+  // Set the output pins
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(s, OUTPUT);
+}
+
+void loop(){
+   if (mySerial.available() > 0) 
+    { 
+      BT = mySerial.read();
+      Serial.println(BT);
+      // Interpret Bluetooth commands and control motors accordingly
+      switch (BT) 
+      {
+        case 'F':
+          tone(s, 1000); // Send 1KHz sound signal...
+          delay(1000);        // ...for 1 sec
+          noTone(s);     // Stop sound...
+          delay(1000);
+          analogWrite(IN1, 255);
+          digitalWrite(IN2, LOW);
+          analogWrite(IN3, 0);
+          digitalWrite(IN4, HIGH);
+          break;
+
+        case 'B':
+            for (t=0; t<2; t++) {
+              tone(s, 1000); // Send 1KHz sound signal...
+              delay(1000);        // ...for 1 sec
+              noTone(s);     // Stop sound...
+              delay(1000);
+            }
+            analogWrite(IN1, 0);
+            digitalWrite(IN2, HIGH);
+            analogWrite(IN3, 255);
+            digitalWrite(IN4, LOW);
+            break;
+
+        case 'L':
+            for (t=0; t<2; t++) {
+              tone(s, 500); // Send 1KHz sound signal...
+              delay(1000);        // ...for 1 sec
+              noTone(s);     // Stop sound...
+              delay(1000);
+            }
+            analogWrite(IN1, 230);  //
+            digitalWrite(IN2, LOW);  //This two is the vera board clockwise
+            analogWrite(IN3, 230);  //
+            digitalWrite(IN4, LOW);//This two is the side with ir sensor anitclockwise
+            break;
+
+        case 'R':
+            for (t=0; t<2; t++) {
+              tone(s, 500); // Send 1KHz sound signal...
+              delay(1000);        // ...for 1 sec
+              noTone(s);     // Stop sound...
+              delay(1000);
+            }
+            analogWrite(IN1, 0);  //
+            digitalWrite(IN2, HIGH);  //This two is the vera board anticlockwise
+            analogWrite(IN3, 0);  //
+            digitalWrite(IN4, HIGH);//This two is the side with ir sensor clockwise
+            break;
+
+        case 'S':
+            for (t=0; t<3; t++) {
+              tone(s, 1500); // Send 1KHz sound signal...
+              delay(1000);        // ...for 1 sec
+              noTone(s);     // Stop sound...
+              delay(1000);
+            }
+            analogWrite(IN1, 0);
+            digitalWrite(IN2, LOW);
+            analogWrite(IN3, 0);
+            digitalWrite(IN4, LOW);
+            break;
+
+        default:
+            // If an unrecognized command is received
+            break;
+      }
+    }
+}
