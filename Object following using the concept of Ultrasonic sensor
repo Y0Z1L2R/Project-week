@@ -1,0 +1,68 @@
+#include <Adafruit_LiquidCrystal.h>
+
+int IN1 = 11;
+int IN2 = 6;
+int IN3 = 9;
+int IN4 = 3;
+int IR1 = 13;
+int IR2 = 12;
+int trigPin = A5;
+int echoPin = A4;
+float duration, distance;
+int val, val2;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(IN1, OUTPUT);
+  pinMode(IN2, OUTPUT);
+  pinMode(IN3, OUTPUT);
+  pinMode(IN4, OUTPUT);
+  pinMode(IR1, INPUT);
+  pinMode(IR2, INPUT);
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+  Serial.println("Ultrasonic Sensor HC-SR04 Test");
+  Serial.println("with Arduino UNO R3");
+}
+
+void loop() {
+  val = digitalRead(IR1);
+  val2 = digitalRead(IR2);
+
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  duration = pulseIn(echoPin, HIGH);
+  distance = (duration * 0.0343) / 2;
+
+  Serial.print("Distance: ");
+  Serial.print(distance);
+  Serial.println(" cm");
+
+  // Stop the car by default
+  analogWrite(IN1, 0);
+  analogWrite(IN2, 0);
+  analogWrite(IN3, 0);
+  analogWrite(IN4, 0);
+
+  if (distance < 20 && distance > 5) {
+    // Forward
+    analogWrite(IN1, 90);
+    analogWrite(IN4, 90);
+  }
+
+  if (val2 == LOW) {
+    // Left
+    analogWrite(IN2, 90);
+    analogWrite(IN3, 0);
+  }
+
+  if (val == LOW) {
+    // Right
+    analogWrite(IN2, 0);
+    analogWrite(IN3, 90);
+  }
+}
